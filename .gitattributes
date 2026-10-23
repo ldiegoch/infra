@@ -1,0 +1,6 @@
+# Finales de línea LF en todo el repositorio (necesario en Windows:
+# un script con CRLF falla dentro del dev container).
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary

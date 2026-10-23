@@ -1,0 +1,27 @@
+# OpenTofu (el .terraform.lock.hcl SÍ se versiona)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secretos descifrados y llaves: nunca al repositorio
+*.dec.*
+.env
+.env.*
+keys.txt
+*.agekey
+
+# Claude Code: preferencias personales de cada máquina
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Sistema
+.DS_Store
+Thumbs.db
