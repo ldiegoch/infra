@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/check.sh:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(tofu fmt:*)",
+      "Bash(tofu validate:*)",
+      "Bash(tofu test:*)",
+      "Bash(tofu init -backend=false:*)",
+      "Bash(tflint:*)",
+      "Bash(trivy config:*)",
+      "Bash(gitleaks:*)",
+      "Bash(pre-commit run:*)",
+      "Bash(bash .claude/hooks/guard.test.sh)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Edit(.kiro/steering/constitucion.md)"
+    ],
+    "deny": [
+      "Bash(tofu apply:*)",
+      "Bash(tofu destroy:*)",
+      "Bash(tofu import:*)",
+      "Bash(tofu state:*)",
+      "Bash(tofu force-unlock:*)",
+      "Bash(terraform:*)",
+      "Bash(sops:*)",
+      "Bash(age:*)",
+      "Bash(age-keygen:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh run rerun:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh variable:*)",
+      "Bash(gh api:*)",
+      "Read(./**/*.dec.*)",
+      "Read(./.env*)",
+      "Read(./**/keys.txt)",
+      "Read(./**/*.agekey)",
+      "Read(~/.config/sops/**)",
+      "Read(./**/*.tfstate*)",
+      "Read(./**/*.tfplan)",
+      "Read(./**/.terraform/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/hooks/**)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.sh\"" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/fmt.sh\"" }]
+      }
+    ]
+  }
+}

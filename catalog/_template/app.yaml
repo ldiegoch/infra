@@ -1,0 +1,16 @@
+# Copia esta carpeta a catalog/<nombre> y llena cada campo.
+name: CAMBIAR              # kebab-case, igual que la carpeta
+enabled: true              # false = apagar sin borrar
+database:
+  neon: false              # true = proyecto Neon + DATABASE_URL
+services:
+  web:
+    image: ghcr.io/USUARIO/IMAGEN@sha256:DIGEST   # siempre por digest
+    port: 3000
+    public: true           # solo el frontend
+    hostname: CAMBIAR.midominio.com
+    healthcheck: /health
+    memory_mb: 256
+    # uses_database: true  # recibe DATABASE_URL (requiere database.neon: true)
+    env: {}
+    secrets: []            # solo nombres; valores en secrets.enc.yaml
