@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Fundaciones: herramientas, stacks vacíos y configuración de lint
-- [ ] 1.1 Agregar las dependencias de validación al dev container y proponer su ADR
+- [x] 1.1 Agregar las dependencias de validación al dev container y proponer su ADR
   - Agregar el paquete de validación de JSON Schema de la distribución y, de forma explícita, el de YAML a la instalación de paquetes del dev container
   - Redactar el ADR 0012 con estado "propuesto": contexto, decisión, alternativas descartadas (validador de PyPI, ajv, validación en OpenTofu) y consecuencias
   - Terminado cuando: el Dockerfile instala ambos paquetes y el ADR 0012 existe con la plantilla del proyecto

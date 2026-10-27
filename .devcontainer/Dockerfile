@@ -21,7 +21,7 @@ ARG TFLINT_VERSION=0.64.0
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl ca-certificates jq unzip pre-commit \
+      curl ca-certificates jq unzip pre-commit python3-jsonschema python3-yaml \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp/tools
