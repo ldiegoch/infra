@@ -23,7 +23,7 @@
   - Terminado cuando: ambos stacks pasan `init -backend=false` y `validate` sin la variable de la frase y sin red, y no declaran recursos ni providers
   - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 1.4 Configurar el linter y el escaneo de IaC
+- [x] 1.4 Configurar el linter y el escaneo de IaC
   - Configurar el linter con el ruleset integrado en su preset recomendado, sin plugins descargables
   - Crear el archivo de excepciones del escáner, vacío, con una nota de que cada excepción lleva justificación
   - Si aparece el aviso de variable no usada para la frase del estado, resolverlo con una excepción justificada en línea
@@ -136,3 +136,7 @@
   - Terminado cuando: los seis resultados se observan como se describe y el repositorio queda sin archivos temporales
   - _Depends: 3.2, 4.4, 5_
   - _Requirements: 1.1, 1.3, 3.4, 4.2, 5.3, 5.4, 5.5, 5.6_
+
+## Implementation Notes
+- tflint 0.64: `--recursive` no aplica el `.tflint.hcl` de la raíz a los subdirectorios; usar siempre `--config "$PWD/.tflint.hcl"` (check.sh y CI).
+- trivy sobre todo el repo marca DS-0002 (HIGH) en `.devcontainer/Dockerfile` (sin `USER` no root); decisión humana pendiente antes de 3.1.

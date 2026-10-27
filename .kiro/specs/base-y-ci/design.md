@@ -378,7 +378,7 @@ usa `-lock-timeout=5m` para esperar a un apply en curso.
   5. `tofu test` en cada directorio con `tests/*.tftest.hcl` (si no hay
      ninguno, imprime "omitido").
   6. Pruebas de scripts, descubiertas por patrón: `python3 -m unittest discover scripts/tests` y cada `scripts/tests/test_*.sh`.
-  7. `tflint --recursive`.
+  7. `tflint --recursive --config "$PWD/.tflint.hcl"` (ruta absoluta: en modo recursivo tflint 0.64 busca la configuración en cada directorio, no en la raíz).
   8. `trivy config --severity HIGH,CRITICAL --exit-code 1`.
   9. `gitleaks git --redact`.
   10. `check_sops.py`.

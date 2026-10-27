@@ -1,0 +1,8 @@
+# Excepciones de `trivy config` (scripts/check.sh y CI).
+# Vacío a propósito: no hay excepciones aprobadas.
+#
+# Cada excepción que se agregue debe ir precedida de un comentario con:
+#   - por qué el hallazgo no aplica o se acepta el riesgo,
+#   - qué archivo o recurso afecta,
+#   - quién la aprobó y en qué PR o ADR.
+# Formato: un ID por línea (por ejemplo, AVD-XXX-0000), nunca sin justificación.
