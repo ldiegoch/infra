@@ -13,7 +13,7 @@
   - Terminado cuando: el ADR 0012 dice "aceptado" y, en el contenedor reconstruido, Python importa los módulos de JSON Schema y de YAML
   - _Requirements: 4.1_
 
-- [ ] 1.3 Crear los dos stacks vacíos con estado remoto cifrado
+- [x] 1.3 Crear los dos stacks vacíos con estado remoto cifrado
   - Crear `platform/` y `apps/`, y el README breve del directorio de módulos; los demás directorios los crean las tareas que agregan sus archivos
   - En cada stack: versión mínima de OpenTofu, backend remoto con una llave propia por stack y bloqueo activado, sin endpoint en el código
   - Cifrado obligatorio de estado y plan con una frase que llega como variable sensible, con validación de longitud mínima y sin valor por defecto
