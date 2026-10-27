@@ -30,7 +30,7 @@
   - Terminado cuando: el linter recursivo y el escaneo con severidad alta y crítica terminan sin hallazgos sobre los stacks
   - _Requirements: 1.5, 9.5_
 
-- [ ] 2. Verificaciones independientes
+- [x] 2. Verificaciones independientes
 - [x] 2.1 (P) Reglas de cifrado del catálogo y verificación de archivos cifrados
   - Versionar la configuración de cifrado con una regla para los secretos del catálogo y las dos llaves públicas de la introducción de los requisitos
   - Verificación que, sin descifrar ni usar llaves privadas, rechaza archivos sin metadatos, valores no cifrados y destinatarios distintos de los configurados, indicando ruta y motivo sin mostrar valores
@@ -59,7 +59,7 @@
   - _Boundary: destroy-guard.sh, test_destroy_guard.sh, fixtures/plans_
   - _Requirements: 8.1, 8.2, 8.3, 8.5, 8.6_
 
-- [ ] 2.4 (P) Publicación del plan como comentario único por stack
+- [x] 2.4 (P) Publicación del plan como comentario único por stack
   - Script que busca el comentario del PR con el marcador del stack y lo reemplaza, o lo crea si no existe
   - Incluye el resultado de la guardia y trunca los planes muy largos con un aviso
   - Prueba con un `gh` simulado en el PATH: falta de variables de entorno, creación en la primera llamada y reemplazo en la segunda
@@ -141,3 +141,4 @@
 - tflint 0.64: `--recursive` no aplica el `.tflint.hcl` de la raíz a los subdirectorios; usar siempre `--config "$PWD/.tflint.hcl"` (check.sh y CI).
 - DS-0002 (Dockerfile sin `USER` no root) resuelto con `USER vscode` por decisión humana; trivy pasa sobre todo el repo.
 - destroy-guard.sh: `tofu show -json` omite `resource_changes` si no hay cambios; la guardia aprueba ese caso solo si el documento es un objeto con `format_version` cadena. Cualquier otra forma inválida sale con 2.
+- pr-comment.sh recibe la salida de la guardia como archivo; 4.1 debe guardarla con su código de salida, publicar el comentario aunque rechace y fallar el job después. Autor por defecto `github-actions[bot]` (`PR_COMMENT_AUTHOR`).
