@@ -73,3 +73,6 @@ RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
 WORKDIR /
 # El volumen de la sesión de Claude hereda este dueño; sin esto queda como root.
 RUN mkdir -p /home/vscode/.claude && chown -R vscode:vscode /home/vscode/.claude
+
+# Sin root por defecto (Trivy DS-0002); devcontainer.json ya usa remoteUser vscode.
+USER vscode

@@ -1,6 +1,6 @@
 # 0012. Validador de `app.yaml` con `python3-jsonschema`
 
-- Estado: propuesto
+- Estado: aceptado
 - Fecha: 2026-10-27
 
 ## Contexto

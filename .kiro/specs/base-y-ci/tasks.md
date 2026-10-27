@@ -139,4 +139,4 @@
 
 ## Implementation Notes
 - tflint 0.64: `--recursive` no aplica el `.tflint.hcl` de la raíz a los subdirectorios; usar siempre `--config "$PWD/.tflint.hcl"` (check.sh y CI).
-- trivy sobre todo el repo marca DS-0002 (HIGH) en `.devcontainer/Dockerfile` (sin `USER` no root); decisión humana pendiente antes de 3.1.
+- DS-0002 (Dockerfile sin `USER` no root) resuelto con `USER vscode` por decisión humana; trivy pasa sobre todo el repo.
