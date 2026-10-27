@@ -85,7 +85,7 @@
   - _Depends: 2.1, 2.2, 3.1_
   - _Requirements: 3.4, 3.6, 4.2, 5.6_
 
-- [ ] 4. Workflows de CI
+- [x] 4. Workflows de CI
 - [x] 4.1 Workflow reutilizable de plan y apply por stack
   - Entradas, secretos y pasos del contrato del diseño: versión de OpenTofu leída del Dockerfile, red privada con la etiqueta del CI, init, plan a archivo, salidas de texto y JSON, guardia, comentario o apply del mismo plan y limpieza final
   - Invariante: el modo apply solo con el Environment de producción y desde `main`; en otro caso falla antes del init
@@ -111,7 +111,7 @@
   - _Depends: 4.1_
   - _Requirements: 2.5, 7.1, 7.2, 7.4, 7.5, 8.4, 9.1, 9.2_
 
-- [ ] 4.4 Pruebas estáticas de los workflows
+- [x] 4.4 Pruebas estáticas de los workflows
   - Prueba que recorre los workflows y verifica: acciones de terceros con SHA, `permissions` en cada workflow con disparadores propios (los de solo `workflow_call` quedan exentos), apply solo en push a `main` con la concurrencia de producción sin cancelación, y plan de PR condicionado al mismo repositorio
   - El orquestador la descubre por patrón, sin cambios
   - Terminado cuando: la prueba pasa sobre los workflows reales, falla con un workflow de ejemplo que usa una etiqueta en lugar de SHA, y aparece en la salida del orquestador
