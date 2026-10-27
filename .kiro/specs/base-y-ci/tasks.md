@@ -95,7 +95,7 @@
   - _Depends: 2.3, 2.4_
   - _Requirements: 2.3, 6.5, 6.6, 6.7, 7.3, 7.6, 7.7, 9.1, 9.3_
 
-- [ ] 4.2 Workflow de pull request
+- [x] 4.2 Workflow de pull request
   - Disparadores y concurrencia por PR del diseño; job de checks que construye la imagen del dev container y corre el orquestador dentro
   - Job de plan dependiente de los checks, solo para PR del mismo repositorio, en matriz por stack, con el Environment de plan y la autorización según la etiqueta del PR
   - Permisos: lectura de contenido por defecto y escritura de PR solo en el job de plan; acciones con los SHA resueltos en 4.1
@@ -144,3 +144,4 @@
 - pr-comment.sh recibe la salida de la guardia como archivo; 4.1 debe guardarla con su código de salida, publicar el comentario aunque rechace y fallar el job después. Autor por defecto `github-actions[bot]` (`PR_COMMENT_AUTHOR`).
 - check.sh paso 9 usa `gitleaks git` (solo historial, según el diseño): no ve secretos en archivos sin commit. Pendiente de decisión humana; el pre-commit (3.2) debe usar `gitleaks git --staged`.
 - Acciones fijadas en 4.1 (reutilizar en 4.2/4.3): actions/checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`, opentofu/setup-opentofu v2.0.2 `a1320f892987e89d278cc92dc5adc984fb93aca4`, tailscale/github-action v4.3.0 `99a8333667fff04fdd6cffb46dfd409f8329a7bf`. Secretos del Environment sin declarar en `workflow_call` (llamar con `secrets: inherit`).
+- pr.yml corre check.sh con `docker run -u "$(id -u):$(id -g)" -e HOME=/tmp`: el uid debe coincidir con el dueño del checkout o fallan `tofu init` y `gitleaks git`. `.claude/rules/workflows.md` ("credenciales solo desde production") choca con el Environment `plan`; lo actualiza el humano con el ADR 0011.
