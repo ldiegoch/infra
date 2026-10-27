@@ -2,6 +2,7 @@
 
 import io
 import sys
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -93,6 +94,13 @@ class CheckCatalogTest(unittest.TestCase):
     def test_missing_schema_exits_2(self):
         code, _ = run("--schema", str(TESTS / "no-existe.json"), str(FIXTURES / "valid-app" / "app.yaml"))
         self.assertEqual(code, 2)
+
+    def test_non_utf8_file_reports_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app = Path(tmp) / "bytes-app" / "app.yaml"
+            app.parent.mkdir()
+            app.write_bytes(b"name: \xff\n")
+            self.assertEqual(run(str(app)), (1, ["bytes-app: (archivo): no se puede leer como UTF-8"]))
 
 
 if __name__ == "__main__":

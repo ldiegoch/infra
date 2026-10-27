@@ -74,6 +74,8 @@ def check_app(path, validator):
     app = path.parent.name
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        return [f"{app}: (archivo): no se puede leer como UTF-8"]
     except OSError:
         return [f"{app}: (archivo): no se puede leer {path}"]
     except yaml.YAMLError as exc:
