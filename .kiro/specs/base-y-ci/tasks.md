@@ -1,13 +1,13 @@
 # Implementation Plan
 
-- [ ] 1. Fundaciones: herramientas, stacks vacíos y configuración de lint
+- [x] 1. Fundaciones: herramientas, stacks vacíos y configuración de lint
 - [x] 1.1 Agregar las dependencias de validación al dev container y proponer su ADR
   - Agregar el paquete de validación de JSON Schema de la distribución y, de forma explícita, el de YAML a la instalación de paquetes del dev container
   - Redactar el ADR 0012 con estado "propuesto": contexto, decisión, alternativas descartadas (validador de PyPI, ajv, validación en OpenTofu) y consecuencias
   - Terminado cuando: el Dockerfile instala ambos paquetes y el ADR 0012 existe con la plantilla del proyecto
   - _Requirements: 4.1_
 
-- [ ] 1.2 Puerta humana: aceptar el ADR 0012 y reconstruir el dev container
+- [x] 1.2 Puerta humana: aceptar el ADR 0012 y reconstruir el dev container
   - El agente se detiene aquí y le pide al humano que acepte el ADR 0012 (constitución, principio 8) y reconstruya el dev container
   - Si el humano no lo acepta, el agente no sigue con las tareas que dependen del validador (2.2, 3.1, 3.2, 6) y vuelve al diseño
   - Terminado cuando: el ADR 0012 dice "aceptado" y, en el contenedor reconstruido, Python importa los módulos de JSON Schema y de YAML
