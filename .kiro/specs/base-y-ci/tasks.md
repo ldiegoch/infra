@@ -31,7 +31,7 @@
   - _Requirements: 1.5, 9.5_
 
 - [ ] 2. Verificaciones independientes
-- [ ] 2.1 (P) Reglas de cifrado del catálogo y verificación de archivos cifrados
+- [x] 2.1 (P) Reglas de cifrado del catálogo y verificación de archivos cifrados
   - Versionar la configuración de cifrado con una regla para los secretos del catálogo y las dos llaves públicas de la introducción de los requisitos
   - Verificación que, sin descifrar ni usar llaves privadas, rechaza archivos sin metadatos, valores no cifrados y destinatarios distintos de los configurados, indicando ruta y motivo sin mostrar valores
   - Códigos de salida según el contrato del diseño, incluido el caso de configuración ausente o inválida
