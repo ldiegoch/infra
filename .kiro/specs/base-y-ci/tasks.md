@@ -67,7 +67,7 @@
   - _Boundary: pr-comment.sh, test_pr_comment.sh_
   - _Requirements: 6.2, 6.3_
 
-- [ ] 3. Orquestación local
+- [x] 3. Orquestación local
 - [x] 3.1 Orquestador de verificaciones con salida concisa
   - Ejecutar en orden las verificaciones del contrato del diseño: herramientas, formato, validación de stacks y módulos, lock file condicional, pruebas de OpenTofu, pruebas de scripts, linter, escaneo de IaC, detección de secretos, cifrado y catálogo
   - Descubrir las pruebas de scripts por patrón (unittest de Python y `test_*.sh`), para que las pruebas nuevas entren sin modificar el orquestador
@@ -77,7 +77,7 @@
   - _Depends: 1.2, 1.4, 2.1, 2.2, 2.3, 2.4_
   - _Requirements: 1.3, 1.4, 3.6, 5.1, 5.2, 5.3, 5.4, 5.5, 9.5_
 
-- [ ] 3.2 Hooks de pre-commit con las herramientas de la imagen
+- [x] 3.2 Hooks de pre-commit con las herramientas de la imagen
   - Hooks locales de formato, detección de secretos en los cambios en stage, cifrado de los secretos del catálogo y validación de `app.yaml`, reutilizando los mismos scripts que el orquestador
   - Ejecutar `pre-commit install` explícitamente (hoy solo corre al iniciar el contenedor)
   - Probar el rechazo con `pre-commit run --files` sobre un secreto sin cifrar temporal, sin hacer commits, y borrarlo después
