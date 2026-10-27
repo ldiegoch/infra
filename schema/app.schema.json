@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "app.yaml",
+  "description": "Contrato de catalog/<app>/app.yaml (docs/plan.md).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "services"],
+  "properties": {
+    "name": { "$ref": "#/$defs/kebab" },
+    "enabled": { "type": "boolean", "default": true },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "neon": { "type": "boolean", "default": false }
+      }
+    },
+    "services": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/kebab" },
+      "additionalProperties": { "$ref": "#/$defs/service" }
+    }
+  },
+  "if": {
+    "required": ["database"],
+    "properties": {
+      "database": { "required": ["neon"], "properties": { "neon": { "const": true } } }
+    }
+  },
+  "else": {
+    "properties": {
+      "services": {
+        "additionalProperties": { "properties": { "uses_database": { "const": false } } }
+      }
+    }
+  },
+  "$defs": {
+    "kebab": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "var_name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "port", "public", "memory_mb"],
+      "properties": {
+        "image": { "type": "string", "pattern": "^[^@\\s:]+(:[^@\\s]+)?@sha256:[a-f0-9]{64}$" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "public": { "type": "boolean" },
+        "hostname": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$"
+        },
+        "healthcheck": { "type": "string", "pattern": "^/" },
+        "memory_mb": { "type": "integer", "minimum": 16 },
+        "uses_database": { "type": "boolean" },
+        "env": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/var_name" },
+          "additionalProperties": { "type": "string" }
+        },
+        "secrets": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/var_name" }
+        }
+      },
+      "if": { "required": ["public"], "properties": { "public": { "const": true } } },
+      "then": { "required": ["hostname"] },
+      "else": { "properties": { "hostname": false } }
+    }
+  }
+}

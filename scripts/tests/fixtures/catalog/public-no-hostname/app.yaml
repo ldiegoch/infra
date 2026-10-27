@@ -1,0 +1,7 @@
+name: public-no-hostname
+services:
+  web:
+    image: ghcr.io/ejemplo/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 3000
+    public: true
+    memory_mb: 128

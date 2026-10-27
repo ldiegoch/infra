@@ -1,0 +1,10 @@
+name: db-without-neon
+database:
+  neon: false
+services:
+  web:
+    image: ghcr.io/ejemplo/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 3000
+    public: false
+    uses_database: true
+    memory_mb: 128

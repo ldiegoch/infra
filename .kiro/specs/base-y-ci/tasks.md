@@ -41,7 +41,7 @@
   - _Boundary: .sops.yaml, check_sops.py, test_check_sops.py, fixtures/sops, .gitleaksignore_
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.7_
 
-- [ ] 2.2 (P) Esquema de app.yaml y verificación del catálogo
+- [x] 2.2 (P) Esquema de app.yaml y verificación del catálogo
   - Escribir el esquema con la tabla de campos del diseño, incluidos `enabled`, la regla hostname/public y la regla `uses_database` ↔ `database.neon`
   - Verificación que valida cada `app.yaml` contra el esquema, exige nombre igual a la carpeta e ignora las carpetas que empiezan con `_`
   - Mensajes con app, ruta del campo y motivo; códigos de salida según el contrato
