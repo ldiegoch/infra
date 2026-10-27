@@ -159,7 +159,7 @@ check_trivy() {
 # --- 9. Detección de secretos ----------------------------------------------
 check_gitleaks() {
   need gitleaks || return 1
-  gitleaks git --redact --no-banner --no-color --log-level error .
+  gitleaks git --redact -v --no-banner --no-color --log-level error .
 }
 
 # --- 10 y 11. Cifrado y catálogo -------------------------------------------
