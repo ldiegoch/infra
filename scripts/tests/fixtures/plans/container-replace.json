@@ -1,0 +1,33 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.10.0",
+  "resource_changes": [
+    {
+      "address": "docker_container.web",
+      "type": "docker_container",
+      "change": {
+        "actions": ["delete", "create"],
+        "before": {"image": "fake-attribute-value-old"},
+        "after": {"image": "fake-attribute-value-new"}
+      }
+    },
+    {
+      "address": "docker_container.worker",
+      "type": "docker_container",
+      "change": {
+        "actions": ["delete"],
+        "before": {"image": "fake-attribute-value-worker"},
+        "after": null
+      }
+    },
+    {
+      "address": "cloudflare_dns_record.web",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": ["update"],
+        "before": {"content": "fake-attribute-value-a"},
+        "after": {"content": "fake-attribute-value-b"}
+      }
+    }
+  ]
+}

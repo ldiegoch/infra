@@ -51,7 +51,7 @@
   - _Depends: 1.2_
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
 
-- [ ] 2.3 (P) Guardia contra destrucciones con sus pruebas
+- [x] 2.3 (P) Guardia contra destrucciones con sus pruebas
   - Guardia pura que lee el plan JSON y la variable de autorización, marca destrucciones, reemplazos y `forget` de todo tipo distinto de contenedor y decide según la tabla del diseño
   - Salida con una línea por recurso afectado y un veredicto final, sin valores de atributos; los valores de autorización desconocidos se tratan como `unknown`
   - Fixtures de planes: solo creación, reemplazo de contenedor, borrado de servidor, reemplazo create-before-destroy, `forget`, JSON inválido
@@ -140,3 +140,4 @@
 ## Implementation Notes
 - tflint 0.64: `--recursive` no aplica el `.tflint.hcl` de la raíz a los subdirectorios; usar siempre `--config "$PWD/.tflint.hcl"` (check.sh y CI).
 - DS-0002 (Dockerfile sin `USER` no root) resuelto con `USER vscode` por decisión humana; trivy pasa sobre todo el repo.
+- destroy-guard.sh: `tofu show -json` omite `resource_changes` si no hay cambios; la guardia aprueba ese caso solo si el documento es un objeto con `format_version` cadena. Cualquier otra forma inválida sale con 2.
