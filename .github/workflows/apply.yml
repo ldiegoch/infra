@@ -1,0 +1,111 @@
+# Workflow de apply: aplica platform y después apps al fusionar en main.
+#
+# - labels: busca el PR fusionado que produjo este commit y resuelve la
+#   etiqueta allow-destroy como true, false o unknown. Ante cualquier error,
+#   o si no hay PR (push directo), produce unknown: la guardia rechaza
+#   entonces cualquier destrucción que no sea de un contenedor (fallo
+#   cerrado).
+# - platform y apps: llaman a _tofu-stack.yml con mode apply y el
+#   Environment production, del que salen las credenciales
+#   (secrets: inherit). apps depende de platform: si platform falla o la
+#   guardia lo rechaza, apps no corre.
+#
+# Seguridad: ningún paso `run:` interpola expresiones; los valores se pasan
+# por `env:`.
+name: apply
+
+on:
+  push:
+    branches: [main]
+
+# Techo por defecto: solo lectura del contenido. Los jobs de apply heredan
+# este techo; solo labels amplía a lectura de PR.
+permissions:
+  contents: read
+
+# Una sola ejecución que toca el estado a la vez y nunca se cancela la que
+# está en curso. GitHub deja en espera solo la más reciente, que contiene
+# los cambios de las anteriores. Va a nivel de workflow, así que cubre
+# todos los jobs que aplican (incluidos los del workflow reutilizable); un
+# grupo igual a nivel de job provocaría un bloqueo mutuo.
+concurrency:
+  group: tofu-production
+  cancel-in-progress: false
+
+jobs:
+  labels:
+    name: labels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # Para listar los PR asociados al commit y leer sus etiquetas.
+      pull-requests: read
+    outputs:
+      allow_destroy: ${{ steps.resolve.outputs.allow_destroy }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Resolver la etiqueta allow-destroy del PR fusionado
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Fallo cerrado: unknown salvo que se encuentre exactamente un PR
+          # fusionado en main cuyo commit de fusión sea este SHA.
+          result=unknown
+          delays=(5 10 0)
+          for attempt in 1 2 3; do
+            if body="$(gh api -H "Accept: application/vnd.github+json" "repos/$REPO/commits/$SHA/pulls")" &&
+               found="$(jq -r --arg sha "$SHA" '
+                 [ .[] | select(.merged_at != null
+                                and .base.ref == "main"
+                                and .merge_commit_sha == $sha) ]
+                 | if length == 1 then
+                     (if any(.[0].labels[]?; .name == "allow-destroy") then "true" else "false" end)
+                   else "none" end' <<<"$body")"; then
+              case "$found" in
+                true | false) result="$found"; break ;;
+              esac
+              echo "::warning::intento $attempt: no se encontró un único PR fusionado para el commit"
+            else
+              echo "::warning::intento $attempt: falló la consulta de PR del commit"
+            fi
+            delay="${delays[$((attempt - 1))]}"
+            if (( delay > 0 )); then sleep "$delay"; fi
+          done
+          case "$result" in
+            true | false | unknown) ;;
+            *) result=unknown ;;
+          esac
+          if [[ "$result" == "unknown" ]]; then
+            echo "::warning::no se pudo determinar el PR fusionado; allow_destroy=unknown (la guardia rechazará destrucciones)"
+          fi
+          echo "allow_destroy=$result"
+          echo "allow_destroy=$result" >> "$GITHUB_OUTPUT"
+
+  platform:
+    name: platform
+    needs: labels
+    uses: ./.github/workflows/_tofu-stack.yml
+    with:
+      stack: platform
+      mode: apply
+      environment: production
+      allow_destroy: ${{ needs.labels.outputs.allow_destroy }}
+    secrets: inherit
+
+  apps:
+    name: apps
+    # Sin always()/failure(): si platform falla o se omite, apps no corre.
+    needs: [labels, platform]
+    uses: ./.github/workflows/_tofu-stack.yml
+    with:
+      stack: apps
+      mode: apply
+      environment: production
+      allow_destroy: ${{ needs.labels.outputs.allow_destroy }}
+    secrets: inherit

@@ -103,7 +103,7 @@
   - _Depends: 3.1, 4.1_
   - _Requirements: 3.5, 6.1, 6.2, 6.4, 9.1, 9.2, 9.4_
 
-- [ ] 4.3 Workflow de apply en main
+- [x] 4.3 Workflow de apply en main
   - Disparo solo por push a `main`; concurrencia de producción sin cancelar la ejecución en curso
   - Job que resuelve la etiqueta del PR fusionado con reintentos y produce `true`, `false` o `unknown`
   - Apply de plataforma y luego de apps con el workflow reutilizable y el Environment de producción; apps depende de plataforma
@@ -145,3 +145,4 @@
 - check.sh paso 9 usa `gitleaks git` (solo historial, según el diseño): no ve secretos en archivos sin commit. Pendiente de decisión humana; el pre-commit (3.2) debe usar `gitleaks git --staged`.
 - Acciones fijadas en 4.1 (reutilizar en 4.2/4.3): actions/checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`, opentofu/setup-opentofu v2.0.2 `a1320f892987e89d278cc92dc5adc984fb93aca4`, tailscale/github-action v4.3.0 `99a8333667fff04fdd6cffb46dfd409f8329a7bf`. Secretos del Environment sin declarar en `workflow_call` (llamar con `secrets: inherit`).
 - pr.yml corre check.sh con `docker run -u "$(id -u):$(id -g)" -e HOME=/tmp`: el uid debe coincidir con el dueño del checkout o fallan `tofu init` y `gitleaks git`. `.claude/rules/workflows.md` ("credenciales solo desde production") choca con el Environment `plan`; lo actualiza el humano con el ADR 0011.
+- apply.yml: `pull-requests: read` solo en el job `labels` (más estricto que el diseño, conforme a 9.2); la concurrencia `tofu-production` va a nivel de workflow y no se repite en jobs (bloquearía el run).
