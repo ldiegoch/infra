@@ -86,7 +86,7 @@
   - _Requirements: 3.4, 3.6, 4.2, 5.6_
 
 - [ ] 4. Workflows de CI
-- [ ] 4.1 Workflow reutilizable de plan y apply por stack
+- [x] 4.1 Workflow reutilizable de plan y apply por stack
   - Entradas, secretos y pasos del contrato del diseño: versión de OpenTofu leída del Dockerfile, red privada con la etiqueta del CI, init, plan a archivo, salidas de texto y JSON, guardia, comentario o apply del mismo plan y limpieza final
   - Invariante: el modo apply solo con el Environment de producción y desde `main`; en otro caso falla antes del init
   - Sin `permissions` propios (hereda las del llamador); sin trazas de shell que puedan imprimir credenciales
@@ -143,3 +143,4 @@
 - destroy-guard.sh: `tofu show -json` omite `resource_changes` si no hay cambios; la guardia aprueba ese caso solo si el documento es un objeto con `format_version` cadena. Cualquier otra forma inválida sale con 2.
 - pr-comment.sh recibe la salida de la guardia como archivo; 4.1 debe guardarla con su código de salida, publicar el comentario aunque rechace y fallar el job después. Autor por defecto `github-actions[bot]` (`PR_COMMENT_AUTHOR`).
 - check.sh paso 9 usa `gitleaks git` (solo historial, según el diseño): no ve secretos en archivos sin commit. Pendiente de decisión humana; el pre-commit (3.2) debe usar `gitleaks git --staged`.
+- Acciones fijadas en 4.1 (reutilizar en 4.2/4.3): actions/checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`, opentofu/setup-opentofu v2.0.2 `a1320f892987e89d278cc92dc5adc984fb93aca4`, tailscale/github-action v4.3.0 `99a8333667fff04fdd6cffb46dfd409f8329a7bf`. Secretos del Environment sin declarar en `workflow_call` (llamar con `secrets: inherit`).
