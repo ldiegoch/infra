@@ -68,7 +68,7 @@
   - _Requirements: 6.2, 6.3_
 
 - [ ] 3. Orquestación local
-- [ ] 3.1 Orquestador de verificaciones con salida concisa
+- [x] 3.1 Orquestador de verificaciones con salida concisa
   - Ejecutar en orden las verificaciones del contrato del diseño: herramientas, formato, validación de stacks y módulos, lock file condicional, pruebas de OpenTofu, pruebas de scripts, linter, escaneo de IaC, detección de secretos, cifrado y catálogo
   - Descubrir las pruebas de scripts por patrón (unittest de Python y `test_*.sh`), para que las pruebas nuevas entren sin modificar el orquestador
   - Una línea por verificación exitosa; para las fallidas, solo su detalle (máximo 40 líneas); resumen final y código de salida 0 o 1
@@ -142,3 +142,4 @@
 - DS-0002 (Dockerfile sin `USER` no root) resuelto con `USER vscode` por decisión humana; trivy pasa sobre todo el repo.
 - destroy-guard.sh: `tofu show -json` omite `resource_changes` si no hay cambios; la guardia aprueba ese caso solo si el documento es un objeto con `format_version` cadena. Cualquier otra forma inválida sale con 2.
 - pr-comment.sh recibe la salida de la guardia como archivo; 4.1 debe guardarla con su código de salida, publicar el comentario aunque rechace y fallar el job después. Autor por defecto `github-actions[bot]` (`PR_COMMENT_AUTHOR`).
+- check.sh paso 9 usa `gitleaks git` (solo historial, según el diseño): no ve secretos en archivos sin commit. Pendiente de decisión humana; el pre-commit (3.2) debe usar `gitleaks git --staged`.
