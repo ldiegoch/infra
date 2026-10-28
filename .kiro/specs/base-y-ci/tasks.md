@@ -127,7 +127,7 @@
   - _Depends: 4.1, 4.2, 4.3_
   - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 6. Validación integrada
+- [x] 6. Validación integrada
   - Confirmar que existen todos los directorios del plan con su contenido (`platform/`, `apps/`, `modules/`, `catalog/`, `schema/`, `scripts/`, `.github/workflows/`)
   - Correr el orquestador en el repositorio limpio: todo `ok`, código 0
   - Copiar temporalmente un `app.yaml` inválido y un secreto sin cifrar al catálogo: fallan esas verificaciones, las demás corren, código 1; limpiar después
@@ -147,3 +147,4 @@
 - pr.yml corre check.sh con `docker run -u "$(id -u):$(id -g)" -e HOME=/tmp`: el uid debe coincidir con el dueño del checkout o fallan `tofu init` y `gitleaks git`. `.claude/rules/workflows.md` ("credenciales solo desde production") choca con el Environment `plan`; lo actualiza el humano con el ADR 0011.
 - apply.yml: `pull-requests: read` solo en el job `labels` (más estricto que el diseño, conforme a 9.2); la concurrencia `tofu-production` va a nivel de workflow y no se repite en jobs (bloquearía el run).
 - ADR 0011 (propuesto) deja pendientes de decisión humana la llave de descifrado del CI y las llaves de proveedor sin solo lectura en `plan`. `.kiro/steering/seguridad.md:27` y `.claude/rules/workflows.md:8` aún dicen "solo production": los actualiza el humano al aceptar el ADR.
+- Un error del catálogo también hace fallar `test_real_catalog_passes` en test_check_catalog.py y test_check_sops.py (verifican el catálogo real): un error de autor aparece como 4 fallas. No bloquea; mejora opcional.
