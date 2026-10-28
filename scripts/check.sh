@@ -159,7 +159,11 @@ check_trivy() {
 # --- 9. Detección de secretos ----------------------------------------------
 check_gitleaks() {
   need gitleaks || return 1
-  gitleaks git --redact -v --no-banner --no-color --log-level error .
+  local rc=0
+  # Historial de commits y, aparte, el árbol de trabajo (archivos sin commit).
+  gitleaks git --redact -v --no-banner --no-color --log-level error . || rc=1
+  gitleaks dir --redact -v --no-banner --no-color --log-level error . || rc=1
+  return "$rc"
 }
 
 # --- 10 y 11. Cifrado y catálogo -------------------------------------------

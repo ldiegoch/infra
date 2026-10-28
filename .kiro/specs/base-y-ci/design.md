@@ -381,7 +381,8 @@ usa `-lock-timeout=5m` para esperar a un apply en curso.
   6. Pruebas de scripts, descubiertas por patrón: `python3 -m unittest discover scripts/tests` y cada `scripts/tests/test_*.sh`.
   7. `tflint --recursive --config "$PWD/.tflint.hcl"` (ruta absoluta: en modo recursivo tflint 0.64 busca la configuración en cada directorio, no en la raíz).
   8. `trivy config --severity HIGH,CRITICAL --exit-code 1`.
-  9. `gitleaks git --redact`.
+  9. `gitleaks git --redact` (historial) y `gitleaks dir --redact` (árbol de
+     trabajo, incluidos archivos sin commit).
   10. `check_sops.py`.
   11. `check_catalog.py`.
 - **Output**: `ok   <nombre>` por cada verificación que pasa. `FALLA <nombre>`
