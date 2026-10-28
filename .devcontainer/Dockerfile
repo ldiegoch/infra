@@ -2,7 +2,7 @@
 # Herramientas del proyecto con versiones fijadas. Cada descarga se verifica
 # contra el archivo de checksums de su release (age no publica uno).
 # Las líneas "renovate:" permiten que Renovate abra PRs al salir versiones nuevas.
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04@sha256:d94c97dd9cacf183d0a6fd12a8e87b526e9e928307674ae9c94139139c0c6eae
 
 ARG TARGETARCH
 # renovate: datasource=github-releases depName=opentofu/opentofu

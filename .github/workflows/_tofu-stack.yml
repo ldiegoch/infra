@@ -37,6 +37,7 @@ jobs:
   tofu:
     name: ${{ inputs.mode }} ${{ inputs.stack }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     environment: ${{ inputs.environment }}
     defaults:
       run:
