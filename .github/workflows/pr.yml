@@ -19,14 +19,15 @@ on:
 permissions:
   contents: read
 
-# Un solo run por PR; uno nuevo cancela el anterior.
-concurrency:
-  group: pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
+# Concurrencia por job: un push nuevo cancela los checks anteriores, pero
+# nunca un plan en curso, que puede tener tomado el bloqueo del estado en R2
+# (cancelarlo lo dejaría huérfano y el apply en main fallaría).
 jobs:
   checks:
     name: checks
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}-checks
+      cancel-in-progress: true
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
@@ -58,6 +59,10 @@ jobs:
     needs: checks
     # Nunca en forks: solo PR cuya rama vive en este repositorio (9.4).
     if: github.event.pull_request.head.repo.full_name == github.repository
+    # Sin cancelación: el plan nuevo espera a que termine el anterior.
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}-plan-${{ matrix.stack }}
+      cancel-in-progress: false
     permissions:
       contents: read
       # pr-comment.sh publica y reemplaza el comentario con GITHUB_TOKEN.

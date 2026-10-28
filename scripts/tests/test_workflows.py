@@ -151,6 +151,13 @@ class WorkflowsTest(unittest.TestCase):
         needs = [needs] if isinstance(needs, str) else needs or []
         self.assertIn("checks", needs, "pr.yml: el plan debe depender de checks")
 
+    def test_pr_plan_is_never_cancelled(self):
+        # Cancelar un plan con el bloqueo de R2 tomado lo deja huérfano.
+        doc = self.docs["pr.yml"]
+        self.assertFalse(doc.get("concurrency", {}).get("cancel-in-progress"), "pr.yml: concurrency de workflow cancela el plan")
+        plan = doc["jobs"]["plan"].get("concurrency", {})
+        self.assertIs(plan.get("cancel-in-progress"), False, "pr.yml: el plan necesita cancel-in-progress: false")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -216,7 +216,8 @@ sequenceDiagram
 
 Decisiones de flujo: la concurrencia `tofu-production` va a nivel de
 workflow en `apply.yml` con `cancel-in-progress: false`. `pr.yml` agrupa por
-número de PR y cancela la ejecución anterior del mismo PR. El plan del PR
+número de PR: cancela los checks anteriores del mismo PR, pero nunca un plan
+en curso, que puede tener tomado el bloqueo del estado. El plan del PR
 usa `-lock-timeout=5m` para esperar a un apply en curso.
 
 ## Requirements Traceability
@@ -466,7 +467,9 @@ usa `-lock-timeout=5m` para esperar a un apply en curso.
 #### `pr.yml`
 - **On**: `pull_request` hacia `main` con tipos `opened`, `synchronize`,
   `reopened`, `labeled` y `unlabeled`.
-- **Concurrency**: `pr-<número>`, con `cancel-in-progress: true`.
+- **Concurrency** (por job): `checks` en `pr-<número>-checks` con
+  `cancel-in-progress: true`; `plan` en `pr-<número>-plan-<stack>` con
+  `cancel-in-progress: false`, para no dejar huérfano el bloqueo de R2.
 - **Job `checks`**: checkout con `fetch-depth: 0`, luego
   `docker build -t infra-tools .devcontainer` y
   `docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/w" -w /w infra-tools ./scripts/check.sh`.
