@@ -118,7 +118,7 @@
   - _Depends: 4.1, 4.2, 4.3_
   - _Requirements: 7.2, 7.4, 9.1, 9.2, 9.4_
 
-- [ ] 5. Decisión y documentación de credenciales
+- [x] 5. Decisión y documentación de credenciales
   - Redactar el ADR 0011 "propuesto": Environment `plan` limitado a `refs/pull/*/merge`, sin forks, credenciales de solo lectura donde se pueda, la frase del estado y la futura llave SSH como riesgo aceptado, y la falta de revisores obligatorios en Pro
   - Actualizar la tabla de credenciales del plan con el Environment de cada credencial y su alcance
   - Actualizar el Paso 1 de la guía con los dos Environments y sus reglas, los nombres de los secretos, la prueba única de bloqueo en R2 y la protección de `main`
@@ -146,3 +146,4 @@
 - Acciones fijadas en 4.1 (reutilizar en 4.2/4.3): actions/checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`, opentofu/setup-opentofu v2.0.2 `a1320f892987e89d278cc92dc5adc984fb93aca4`, tailscale/github-action v4.3.0 `99a8333667fff04fdd6cffb46dfd409f8329a7bf`. Secretos del Environment sin declarar en `workflow_call` (llamar con `secrets: inherit`).
 - pr.yml corre check.sh con `docker run -u "$(id -u):$(id -g)" -e HOME=/tmp`: el uid debe coincidir con el dueño del checkout o fallan `tofu init` y `gitleaks git`. `.claude/rules/workflows.md` ("credenciales solo desde production") choca con el Environment `plan`; lo actualiza el humano con el ADR 0011.
 - apply.yml: `pull-requests: read` solo en el job `labels` (más estricto que el diseño, conforme a 9.2); la concurrencia `tofu-production` va a nivel de workflow y no se repite en jobs (bloquearía el run).
+- ADR 0011 (propuesto) deja pendientes de decisión humana la llave de descifrado del CI y las llaves de proveedor sin solo lectura en `plan`. `.kiro/steering/seguridad.md:27` y `.claude/rules/workflows.md:8` aún dicen "solo production": los actualiza el humano al aceptar el ADR.

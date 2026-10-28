@@ -150,7 +150,7 @@ terraform {
 
 - El estado contiene secretos (variables de entorno de los contenedores), por eso el cifrado es obligatorio (`enforced = true`).
 - Además del bloqueo, el CI usa un grupo de concurrencia de GitHub Actions: nunca corren dos `apply` a la vez.
-- Pendiente de verificar: si R2 acepta las escrituras condicionales que usa `use_lockfile`. Si no, el grupo de concurrencia basta, porque solo el CI aplica cambios.
+- R2 es compatible con las escrituras condicionales que usa `use_lockfile` según la documentación, pendiente de la prueba única del Paso 1 de la guía. Si falla, el grupo de concurrencia `tofu-production` basta para el `apply`, porque solo el CI aplica cambios.
 
 ### Secretos de las apps con SOPS + age
 
@@ -161,19 +161,33 @@ terraform {
 
 ### Credenciales de la plataforma
 
-Todas viven en un GitHub Environment llamado `production`, disponible solo para la rama `main`.
+Viven en dos GitHub Environments, que crea el humano (Paso 1 de la guía) y que usan los mismos nombres de secretos; cada Environment tiene sus propios valores y, donde el proveedor lo permite, los de `plan` son de solo lectura (ADR 0011):
 
-| Credencial | Alcance mínimo |
-| --- | --- |
-| Token de DigitalOcean | Scopes personalizados: Droplets, firewalls, monitoreo, uptime |
-| Token de API de Cloudflare | DNS de tu zona, Cloudflare Tunnel y el bucket R2 del estado |
-| Llave de API de Neon | Tu organización de Neon |
-| Cliente OAuth de Tailscale | Crear llaves con `tag:server` y `tag:ci` |
-| Llave age del CI | Descifrar el catálogo |
-| Frase de cifrado del estado | También guardada en tu gestor de contraseñas |
-| Llave de acceso a R2 | Solo el bucket `tofu-state` |
-| Llave SSH del usuario `deploy` | Solo ese usuario en el Droplet |
-| Token de lectura de GHCR | `read:packages`, para descargar imágenes privadas |
+- `production`: solo la rama `main`. Lo usa `apply.yml`; tiene las credenciales con escritura.
+- `plan`: solo la regla `refs/pull/*/merge`. Lo usa `pr.yml` para el plan de los PR del mismo repositorio, nunca de forks. Sus credenciales son de solo lectura donde el proveedor lo permite.
+
+Secretos que usa hoy `.github/workflows/_tofu-stack.yml` (crea cada uno en ambos Environments):
+
+| Secreto | Credencial | Alcance en `production` | Alcance en `plan` |
+| --- | --- | --- | --- |
+| `R2_ACCESS_KEY_ID` | Llave de acceso a R2 (ID) | Lectura y escritura de objetos, solo el bucket `tofu-state` | Igual que `production`, con una llave propia: el plan toma el bloqueo del estado |
+| `R2_SECRET_ACCESS_KEY` | Llave de acceso a R2 (secreto) | Par de la anterior | Par de la anterior |
+| `R2_ENDPOINT` | Endpoint S3 de R2 (`https://<ACCOUNT_ID>.r2.cloudflarestorage.com`) | No es una credencial; se guarda como secreto para no fijar el Account ID en el repo | Mismo valor |
+| `TF_STATE_PASSPHRASE` | Frase de cifrado del estado (llega como `TF_VAR_state_passphrase`) | Cifrar y descifrar estado y plan | Mismo valor: no hay variante de solo lectura (riesgo aceptado en el ADR 0011) |
+| `TS_OAUTH_CLIENT_ID` | Cliente OAuth de Tailscale (ID) | Crear llaves con `tag:server` y `tag:ci` y editar la política | Cliente propio: crear llaves solo con `tag:ci` y leer la política |
+| `TS_OAUTH_SECRET` | Cliente OAuth de Tailscale (secreto) | Par del anterior | Par del anterior |
+
+Credenciales que agregan las specs siguientes; cada spec fija el nombre del secreto, lo mapea en `_tofu-stack.yml` y lo crea en ambos Environments:
+
+| Credencial | Alcance en `production` | Alcance en `plan` |
+| --- | --- | --- |
+| Token de DigitalOcean | Scopes personalizados: Droplets, firewalls, monitoreo, uptime | Los mismos scopes, solo lectura |
+| Token de API de Cloudflare | DNS de tu zona, Cloudflare Tunnel y el bucket R2 del estado | Token propio con DNS y Cloudflare Tunnel en lectura |
+| Llave de API de Neon | Tu organización de Neon | Solo lectura si Neon la ofrece; si no, una llave propia con el mismo alcance (pendiente de decisión, ADR 0011) |
+| Llave age del CI | Descifrar el catálogo | Misma llave: el plan de `apps` lee el catálogo (pendiente de decisión, ADR 0011) |
+| Llave SSH del usuario `deploy` | Solo ese usuario en el Droplet | Misma llave: el plan de `apps` consulta Docker por SSH (riesgo aceptado en el ADR 0011) |
+| Token de lectura de GHCR | `read:packages`, para descargar imágenes privadas | El mismo alcance, que ya es de solo lectura |
+| Tokens de Grafana Cloud | Escritura de logs y métricas (Alloy) y service account para el provider | Solo el service account, con rol de lectura si alcanza para el plan |
 
 Sin la frase de cifrado y tu llave age personal no se puede leer el estado ni los secretos: guárdalas en tu gestor de contraseñas antes del primer `apply`.
 
@@ -538,7 +552,7 @@ Marca cada punto al implementarlo y revísalo completo cada trimestre.
 
 - [ ] Secretos solo en archivos SOPS; gitleaks y la verificación de cifrado en pre-commit y en CI
 - [ ] Estado cifrado con `enforced = true`
-- [ ] Tokens con el alcance mínimo y fecha de expiración, solo en el GitHub Environment `production`
+- [ ] Tokens con el alcance mínimo y fecha de expiración, solo en los GitHub Environments `production` y `plan` (ADR 0011), nunca como secretos del repositorio
 - [ ] Frase del estado y llave age personal en tu gestor de contraseñas
 - [ ] 2FA en GitHub, DigitalOcean, Cloudflare, Neon, Tailscale y Grafana
 
@@ -553,7 +567,7 @@ Marca cada punto al implementarlo y revísalo completo cada trimestre.
 
 Seis fases en orden; cada una termina con una condición verificable antes de pasar a la siguiente. La duración es una estimación para una persona.
 
-1. **Cuentas y dev container** (medio día). Cuentas con 2FA, tokens en el GitHub Environment `production`, repositorio con `main` protegida y dev container funcionando.
+1. **Cuentas y dev container** (medio día). Cuentas con 2FA, tokens en los GitHub Environments `production` y `plan` (ADR 0011), repositorio con `main` protegida y dev container funcionando.
    - Listo cuando: Claude Code corre dentro del contenedor y el hook bloquea un `tofu apply` de prueba.
 2. **Base y CI** (1 día). Estado cifrado en R2, `.sops.yaml`, hooks de pre-commit, `pr.yml`, `apply.yml` y la guardia contra destrucciones. El CI va antes que el servidor porque solo el CI aplica cambios.
    - Listo cuando: un PR de prueba muestra el `plan` y un archivo de secretos sin cifrar es rechazado.
