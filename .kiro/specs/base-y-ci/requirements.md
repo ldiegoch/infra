@@ -195,9 +195,11 @@ revisar el efecto de un cambio antes de fusionarlo.
 #### Acceptance Criteria
 1. When se abre o actualiza un pull request hacia `main`, the Workflow de PR
    shall ejecutar todas las verificaciones de la Verificación local.
-2. When las verificaciones pasan y el dueño aprueba el uso del Environment
-   `plan`, the Workflow de PR shall generar el plan de `platform/` y de
-   `apps/` y publicarlo como comentario en el PR.
+2. When las verificaciones pasan y el PR viene de una rama de este
+   repositorio, the Workflow de PR shall usar el Environment `plan`
+   (limitado a `refs/pull/*/merge`, sin revisores obligatorios porque GitHub
+   Pro no los ofrece en repos privados; ADR 0011) para generar el plan de
+   `platform/` y de `apps/` y publicarlo como comentario en el PR.
 3. When el PR se actualiza, the Workflow de PR shall reemplazar su
    comentario anterior en lugar de acumular comentarios nuevos.
 4. If alguna verificación falla, the Workflow de PR shall marcar el PR como

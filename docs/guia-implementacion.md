@@ -30,6 +30,7 @@ Crea las cuentas en este orden, activa 2FA en cada una antes de generar cualquie
      - `plan`: misma opción, con la regla `refs/pull/*/merge` y nada más. Lo usa `pr.yml` para el plan de los PR; nunca corre para forks.
    - GitHub Pro no ofrece revisores obligatorios (required reviewers) en Environments de repos privados: no los busques. La protección real es la de `main`.
    - Protege `main`: PR obligatorio, checks en verde (`checks` y el plan de ambos stacks), sin force-push y sin push directo. Así, un PR no puede cambiar `apply.yml` ni usar `production` sin pasar por la fusión.
+   - Crea un ruleset de ramas (Settings → Rules → Rulesets) que prohíba crear ramas que coincidan con `refs/**`. La regla del Environment `plan` se compara con nombres de rama, y una rama llamada literalmente `refs/pull/1/merge` podría usar `plan` desde un push. Compruébalo en la prueba única: intentar `git push origin HEAD:refs/heads/refs/pull/1/merge` debe ser rechazado.
    - Crea un token de solo lectura de paquetes (`read:packages`) para descargar imágenes de GHCR.
 2. **DigitalOcean**
    - Regístrate, activa 2FA y agrega un método de pago y una alerta de facturación (por ejemplo, $40).
