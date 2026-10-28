@@ -8,6 +8,7 @@
 tfplan
 plan.json
 plan.txt
+guard.txt
 crash.log
 crash.*.log
 override.tf

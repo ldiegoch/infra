@@ -119,6 +119,17 @@ class CheckSopsTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("catalog/broken/secrets.enc.yaml: YAML inválido", out.getvalue())
 
+    def test_underscore_folders_are_scanned(self):  # 3.4: la excepción de 4.9 es solo para app.yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            catalog = Path(tmp) / "catalog"
+            (catalog / "_old").mkdir(parents=True)
+            (catalog / "_old" / "secrets.enc.yaml").write_text("API_KEY: valor-falso\n", encoding="utf-8")
+            out = io.StringIO()
+            with redirect_stdout(out):
+                code = check_sops.main(["--catalog", str(catalog)])
+        self.assertEqual(code, 1)
+        self.assertIn("catalog/_old/secrets.enc.yaml: ", out.getvalue())
+
     def test_non_utf8_secrets_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             catalog = Path(tmp) / "catalog"

@@ -3,8 +3,8 @@
 
 Uso: check_sops.py [--config ARCHIVO] [--catalog DIR] [secrets.enc.yaml ...]
 
-Sin rutas revisa <catalog>/*/secrets.enc.yaml (ignora carpetas que empiezan
-con "_"). Solo lee metadatos: nunca descifra, nunca invoca herramientas
+Sin rutas revisa <catalog>/*/secrets.enc.yaml, incluidas las carpetas que
+empiezan con "_" (la excepción de las plantillas es solo para app.yaml). Solo lee metadatos: nunca descifra, nunca invoca herramientas
 externas ni usa llaves privadas. Imprime "<ruta>: <motivo>" por archivo
 inválido, nunca un valor.
 Códigos: 0 todo cifrado, 1 hay archivos inválidos, 2 .sops.yaml falta o es inválido.
@@ -137,9 +137,7 @@ def main(argv=None):
         print(f"{args.config}: .sops.yaml inválido: {exc}")
         return 2
 
-    paths = args.paths or sorted(
-        path for path in args.catalog.glob("*/secrets.enc.yaml") if not path.parent.name.startswith("_")
-    )
+    paths = args.paths or sorted(args.catalog.glob("*/secrets.enc.yaml"))
     bases = [args.catalog.parent, args.config.parent]
     lines = []
     for path in paths:
