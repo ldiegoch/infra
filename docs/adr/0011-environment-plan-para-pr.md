@@ -1,7 +1,7 @@
 # 0011. Environment `plan` para el plan de los pull requests
 
-- Estado: propuesto
-- Fecha: 2026-10-27
+- Estado: aceptado
+- Fecha: 2026-10-27 (aceptado el 2026-10-29)
 
 ## Contexto
 `pr.yml` publica en cada PR el `tofu plan` de `platform` y `apps`. Para planificar, OpenTofu necesita leer el estado cifrado en R2, unirse a Tailscale y consultar a los providers, así que el job necesita credenciales. Hasta ahora todas viven en el Environment `production`, limitado a `main` (ADR 0009); un PR no puede usarlo.
@@ -32,4 +32,4 @@ Crear un segundo Environment, `plan`, con la regla de rama `refs/pull/*/merge`. 
 - Riesgo aceptado: `apply.yml` lee la etiqueta `allow-destroy` del PR fusionado al aplicar, no al fusionar. Quien tenga escritura podría ponerla después del merge y antes de que corra el apply. Se acepta con un solo dueño; con más colaboradores habría que fijar la etiqueta en el momento del merge.
 - Limitación de GitHub Pro: sin revisores obligatorios, nada exige una segunda persona antes de que un PR use `plan` o de que `main` use `production`. La protección es la de `main`: PR obligatorio, checks en verde y sin force-push. Como `main` está protegida, un PR no puede cambiar `apply.yml` sin pasar por la fusión.
 - Hay que vigilar: las credenciales de `plan` se rotan junto con las de `production`, y cada spec que agregue un secreto lo crea en ambos Environments con el mismo nombre.
-- Al aceptar este ADR, el humano debe actualizar la regla "Credenciales solo desde el Environment production" de `.claude/rules/workflows.md` para admitir el Environment `plan` en el plan de los PR; el agente no edita `.claude/`.
+- Al aceptar este ADR se actualizaron las reglas "Credenciales solo desde el Environment production" de `.claude/rules/workflows.md` y "solo en el GitHub Environment `production`" de `.kiro/steering/seguridad.md` para admitir el Environment `plan` en el plan de los PR.

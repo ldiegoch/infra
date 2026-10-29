@@ -76,7 +76,7 @@ module_dirs() {
 # --- 1. Herramientas -------------------------------------------------------
 check_tools() {
   local rc=0
-  need tofu tflint trivy gitleaks python3 jq || rc=1
+  need git tofu tflint trivy gitleaks python3 jq || rc=1
   if command -v python3 >/dev/null 2>&1; then
     python3 -c 'import yaml' >/dev/null 2>&1 || { echo "falta python3-yaml (módulo yaml)"; rc=1; }
     python3 -c 'import jsonschema' >/dev/null 2>&1 || { echo "falta python3-jsonschema (módulo jsonschema)"; rc=1; }

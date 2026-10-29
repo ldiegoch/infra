@@ -24,7 +24,7 @@ cada trimestre.
 
 - [ ] Secretos solo en archivos SOPS; gitleaks y la verificación de cifrado en pre-commit y en CI
 - [ ] Estado cifrado con `enforced = true`
-- [ ] Tokens con el alcance mínimo y fecha de expiración, solo en el GitHub Environment `production`
+- [ ] Tokens con el alcance mínimo y fecha de expiración, solo en los GitHub Environments `production` y `plan` (ADR 0011); en `plan`, de solo lectura donde el proveedor lo permita
 - [ ] Frase del estado y llave age personal en tu gestor de contraseñas
 - [ ] 2FA en GitHub, DigitalOcean, Cloudflare, Neon, Tailscale y Grafana
 

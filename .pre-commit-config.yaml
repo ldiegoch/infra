@@ -17,7 +17,8 @@ repos:
         pass_filenames: false
 
       # Secretos en los cambios en stage. check.sh (paso 9) revisa el
-      # historial; aquí se revisa lo que está por entrar al commit.
+      # historial y los archivos del árbol; aquí se revisa lo que está por
+      # entrar al commit.
       # -v muestra archivo y línea de cada hallazgo; --redact oculta el valor.
       - id: gitleaks-staged
         name: detección de secretos en stage (gitleaks)
