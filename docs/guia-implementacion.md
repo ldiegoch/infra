@@ -25,8 +25,12 @@ Orden de los pasos: cuentas y tokens → dev container → proyecto con cc-sdd �
 Crea las cuentas en este orden, activa 2FA en cada una antes de generar cualquier token y guarda cada valor directo en tu gestor de contraseñas. Ningún token va a tu computadora ni al dev container: al final de este paso los cargas en GitHub.
 
 1. **GitHub**
-   - Crea el repositorio privado `infra` y un GitHub Environment llamado `production`, limitado a la rama `main`.
-   - Protege `main`: PR obligatorio, checks en verde, sin force-push.
+   - Crea el repositorio privado `infra` y dos GitHub Environments (Settings → Environments; ADR 0011):
+     - `production`: en "Deployment branches and tags" elige "Selected branches and tags" y agrega solo la rama `main`. Lo usa `apply.yml`.
+     - `plan`: misma opción, con la regla `refs/pull/*/merge` y nada más. Lo usa `pr.yml` para el plan de los PR; nunca corre para forks.
+   - GitHub Pro no ofrece revisores obligatorios (required reviewers) en Environments de repos privados: no los busques. La protección real es la de `main`.
+   - Protege `main`: PR obligatorio, checks en verde (`checks` y el plan de ambos stacks), sin force-push y sin push directo. Así, un PR no puede cambiar `apply.yml` ni usar `production` sin pasar por la fusión.
+   - Crea un ruleset de ramas (Settings → Rules → Rulesets) que prohíba crear ramas que coincidan con `refs/**`. La regla del Environment `plan` se compara con nombres de rama, y una rama llamada literalmente `refs/pull/1/merge` podría usar `plan` desde un push. Compruébalo en la prueba única: intentar `git push origin HEAD:refs/heads/refs/pull/1/merge` debe ser rechazado.
    - Crea un token de solo lectura de paquetes (`read:packages`) para descargar imágenes de GHCR.
 2. **DigitalOcean**
    - Regístrate, activa 2FA y agrega un método de pago y una alerta de facturación (por ejemplo, $40).
@@ -37,12 +41,13 @@ Crea las cuentas en este orden, activa 2FA en cada una antes de generar cualquie
    - Anota el Account ID y el Zone ID de tu dominio.
    - Activa Zero Trust en el plan gratuito (lo requiere Cloudflare Tunnel).
    - Crea un token de API con: DNS de tu zona (editar), Cloudflare Tunnel (editar) y R2 (editar).
-   - Crea el bucket R2 `tofu-state` y, aparte, el bucket `backups`. Genera credenciales S3 de R2 limitadas a `tofu-state` para el backend.
+   - Crea el bucket R2 `tofu-state` y, aparte, el bucket `backups`. Genera dos tokens de API de R2 con permiso "Object Read & Write" limitados a `tofu-state`: uno para `production` y otro para `plan` (el plan también toma el bloqueo del estado). Anota de cada uno el Access Key ID y el Secret Access Key, y el endpoint S3 `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.
 4. **Neon**
    - Crea la organización, anota el `org_id` y genera una llave de API.
 5. **Tailscale**
    - Crea la red, activa MagicDNS y define en la política los tags `tag:server` y `tag:ci`.
-   - Crea un cliente OAuth con permiso para crear llaves de autenticación con esos tags y para editar la política (ACL).
+   - Crea un cliente OAuth para `production` con permiso para crear llaves de autenticación con esos tags y para editar la política (ACL).
+   - Crea otro cliente OAuth para `plan` que solo cree llaves con `tag:ci` y solo lea la política.
    - Instala Tailscale en tu computadora (es lo único extra) para entrar al servidor en emergencias.
 6. **Grafana Cloud**
    - Crea un stack en la región de EE. UU.
@@ -51,7 +56,25 @@ Crea las cuentas en este orden, activa 2FA en cada una antes de generar cualquie
    - Dos llaves age: la tuya y la del CI.
    - La frase de cifrado del estado: 32 caracteres aleatorios o más.
 
-Al terminar, carga en el Environment `production` de GitHub: el token de DigitalOcean, el de Cloudflare, las credenciales S3 de R2, la llave de Neon, el cliente OAuth de Tailscale, los tokens de Grafana, el token de GHCR, la llave age del CI, la frase del estado y la llave SSH del usuario `deploy`.
+Al terminar, carga los secretos en GitHub (Settings → Environments → cada Environment → Environment secrets), nunca como secretos del repositorio. Hoy `.github/workflows/_tofu-stack.yml` usa estos nombres, que deben existir en **ambos** Environments con exactamente este nombre:
+
+| Secreto | Valor en `production` | Valor en `plan` |
+| --- | --- | --- |
+| `R2_ACCESS_KEY_ID` | Access Key ID del token R2 de `production` | Access Key ID del token R2 de `plan` |
+| `R2_SECRET_ACCESS_KEY` | Secret Access Key del token R2 de `production` | Secret Access Key del token R2 de `plan` |
+| `R2_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` | El mismo |
+| `TF_STATE_PASSPHRASE` | La frase de cifrado del estado | La misma (riesgo aceptado en el ADR 0011) |
+| `TS_OAUTH_CLIENT_ID` | ID del cliente OAuth de Tailscale de `production` | ID del cliente OAuth de `plan` |
+| `TS_OAUTH_SECRET` | Secreto del cliente OAuth de `production` | Secreto del cliente OAuth de `plan` |
+
+Si falta alguno, el job falla y muestra solo el nombre que falta. El resto (token de DigitalOcean, token de Cloudflare, llave de Neon, tokens de Grafana, token de GHCR, llave age del CI y llave SSH del usuario `deploy`) se carga cuando la spec que lo usa fija su nombre; el alcance de cada uno en `production` y en `plan` está en docs/plan.md, "Credenciales de la plataforma".
+
+**Prueba única del bloqueo en R2.** La documentación indica que R2 acepta las escrituras condicionales que usa `use_lockfile`, pero se comprueba una vez, cuando ya existan los workflows de la spec `base-y-ci`:
+
+1. Abre dos PR de prueba (por ejemplo, un cambio de comentario en cada uno) y empújalos casi a la vez para que el plan de `platform` corra en paralelo.
+2. Mientras corren, revisa en el panel de R2 que aparece `platform/terraform.tfstate.tflock` en `tofu-state` (dura pocos segundos) y que ya no está al terminar.
+3. Ambos planes deben terminar bien: el segundo espera el bloqueo hasta 5 minutos. Confirma también en el log que el job usó el Environment `plan`: si la regla `refs/pull/*/merge` no admite la ejecución del PR, el job queda rechazado por la regla de rama del Environment y hay que corregirla. Si algún plan falla con un error al crear el bloqueo, R2 no lo soporta: avísale a Claude para proponer un ADR que desactive `use_lockfile`; mientras tanto, el grupo de concurrencia `tofu-production` sigue impidiendo dos `apply` a la vez.
+4. Cierra los PR sin fusionar.
 
 ## Paso 2: dev container
 
@@ -335,7 +358,7 @@ on:
 jobs:
   destroy:
     if: inputs.confirm == format('destruir-{0}', inputs.stack)
-    environment: production        # con "Required reviewers": tú apruebas
+    environment: production        # solo main; Pro no ofrece revisores obligatorios en repos privados (ADR 0011): protegen main y el workflow_dispatch manual
     concurrency: tofu-production
     runs-on: ubuntu-latest
     steps:

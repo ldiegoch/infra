@@ -1,0 +1,8 @@
+name: private-hostname
+services:
+  web:
+    image: ghcr.io/ejemplo/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 3000
+    public: false
+    hostname: interno.ejemplo.com
+    memory_mb: 128

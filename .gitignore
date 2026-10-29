@@ -4,6 +4,11 @@
 *.tfstate.*
 *.tfplan
 *.tfplan.json
+# Artefactos de plan locales del CI
+tfplan
+plan.json
+plan.txt
+guard.txt
 crash.log
 crash.*.log
 override.tf

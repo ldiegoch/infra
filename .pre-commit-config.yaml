@@ -1,0 +1,47 @@
+# Hooks de pre-commit (requisitos 3.4, 3.6, 4.2, 5.6).
+# Solo hooks locales con las herramientas de la imagen del dev container:
+# no se descarga nada. Los comandos son los mismos que usa scripts/check.sh.
+# Instalación: pre-commit install (el dev container lo hace al iniciar).
+default_install_hook_types: [pre-commit]
+fail_fast: false
+
+repos:
+  - repo: local
+    hooks:
+      # Formato de OpenTofu en todo el repositorio, como check.sh (paso 2).
+      - id: tofu-fmt
+        name: formato (tofu fmt)
+        entry: tofu fmt -check -recursive -no-color
+        language: system
+        files: \.(tf|tfvars|tftest\.hcl)$
+        pass_filenames: false
+
+      # Secretos en los cambios en stage. check.sh (paso 9) revisa el
+      # historial y los archivos del árbol; aquí se revisa lo que está por
+      # entrar al commit.
+      # -v muestra archivo y línea de cada hallazgo; --redact oculta el valor.
+      - id: gitleaks-staged
+        name: detección de secretos en stage (gitleaks)
+        entry: gitleaks git --pre-commit --staged --redact -v --no-banner --no-color --log-level error
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # Cifrado de catalog/<app>/secrets.enc.yaml. Revisa todo el catálogo
+      # (ignora carpetas "_") para que un cambio en .sops.yaml también
+      # vuelva a comprobar los destinatarios de todos los archivos.
+      - id: check-sops
+        name: cifrado del catálogo (check_sops.py)
+        entry: python3 -B scripts/check_sops.py
+        language: system
+        files: ^(\.sops\.yaml|catalog/[^/]+/secrets\.enc\.yaml|scripts/check_sops\.py)$
+        pass_filenames: false
+
+      # Validación de catalog/<app>/app.yaml contra el esquema. Revisa todo
+      # el catálogo (ignora carpetas "_") y se repite si cambia el esquema.
+      - id: check-catalog
+        name: catálogo (check_catalog.py)
+        entry: python3 -B scripts/check_catalog.py
+        language: system
+        files: ^(schema/app\.schema\.json|catalog/[^/]+/app\.yaml|scripts/check_catalog\.py)$
+        pass_filenames: false

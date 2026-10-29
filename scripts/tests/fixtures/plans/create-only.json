@@ -1,0 +1,33 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.10.0",
+  "resource_changes": [
+    {
+      "address": "digitalocean_droplet.host",
+      "type": "digitalocean_droplet",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {"name": "fake-attribute-value-host"}
+      }
+    },
+    {
+      "address": "docker_container.web",
+      "type": "docker_container",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {"name": "fake-attribute-value-web"}
+      }
+    },
+    {
+      "address": "docker_network.web",
+      "type": "docker_network",
+      "change": {
+        "actions": ["no-op"],
+        "before": {"name": "fake-attribute-value-net"},
+        "after": {"name": "fake-attribute-value-net"}
+      }
+    }
+  ]
+}

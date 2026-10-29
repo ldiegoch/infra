@@ -1,0 +1,24 @@
+name: valid-app
+enabled: true
+database:
+  neon: true
+services:
+  web:
+    image: ghcr.io/ejemplo/valid-web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 3000
+    public: true
+    hostname: valid-app.ejemplo.com
+    healthcheck: /health
+    memory_mb: 256
+    env:
+      API_URL: http://valid-app-api:8080
+  api:
+    image: ghcr.io/ejemplo/valid-api:1.2.3@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 8080
+    public: false
+    memory_mb: 256
+    uses_database: true
+    env:
+      DOTNET_gcServer: "0"
+    secrets:
+      - Stripe__ApiKey

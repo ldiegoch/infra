@@ -35,8 +35,9 @@ y `.terraform.lock.hcl` en Git. Cualquier provider nuevo requiere ADR.
 - Backend `s3` en R2 (`tofu-state`), una `key` por stack,
   `use_lockfile = true`, cifrado `pbkdf2` + `aes_gcm` con `enforced = true`
   para estado y plan. La frase llega del CI (`var.state_passphrase`).
-- Pendiente de verificar: si R2 acepta las escrituras condicionales de
-  `use_lockfile`. Si no, basta el grupo de concurrencia `tofu-production`.
+- Bloqueo en R2 con `use_lockfile`: compatible según la documentación,
+  pendiente de la prueba del Paso 1 de la guía. Si falla, basta el grupo
+  de concurrencia `tofu-production` para el apply.
 - Secretos de apps: SOPS + age (dos destinatarios: humano y CI), leídos
   con `data "sops_file"`. Lo generable (URL de Neon, token del túnel) lo
   genera OpenTofu y lo inyecta al contenedor.
@@ -47,7 +48,9 @@ y `.terraform.lock.hcl` en Git. Cualquier provider nuevo requiere ADR.
 `scripts/check.sh` agrupa: `tofu fmt -check`, `tofu validate` por stack
 (`init -backend=false`), `tofu test`, `tflint`, `trivy config`, `gitleaks`,
 verificación de cifrado SOPS y validación de `app.yaml` contra
-`schema/app.schema.json`. Su salida debe ser concisa: una línea por
+`schema/app.schema.json` con `scripts/check_catalog.py`
+(`python3-jsonschema` de apt, ADR 0012), que además exige que `name`
+coincida con la carpeta. Su salida debe ser concisa: una línea por
 verificación en éxito y el detalle solo de lo que falla.
 
 ### Testing
@@ -57,9 +60,14 @@ probar es lo que corre sin red hacia la nube.
 
 ### Seguridad en CI
 Acciones fijadas por SHA, `permissions: contents: read` por defecto,
-credenciales solo del Environment `production`, guardia que falla si el
-plan (`tofu show -json`) destruye algo distinto de un contenedor sin la
-etiqueta `allow-destroy`.
+guardia que falla si el plan (`tofu show -json`) destruye algo distinto de
+un contenedor sin la etiqueta `allow-destroy`. `pr.yml` y `apply.yml`
+llaman al workflow reutilizable `_tofu-stack.yml` por stack (init, plan,
+guardia y comentario o apply) con `secrets: inherit`. Credenciales por
+Environment (ADR 0011): `plan` (regla `refs/pull/*/merge`, sin forks,
+solo lectura donde se pueda) para el plan de los PR y `production` (solo
+`main`) para el apply. Los nombres de los secretos están en
+`docs/plan.md`, "Credenciales de la plataforma".
 
 ## Development Environment
 
@@ -81,7 +89,8 @@ Versiones fijadas como `ARG` del Dockerfile y verificadas por checksum.
 Registradas en `docs/adr/0001`–`0010`: OpenTofu, provider Docker sin panel,
 Droplet de DigitalOcean, entrada solo por Tunnel, Neon por app, SOPS + age,
 estado en R2, Grafana Cloud + Alloy, solo el CI aplica, agentes sin
-credenciales.
+credenciales. `0011` (propuesto): Environment `plan` para el plan de los PR.
+`0012`: validador de `app.yaml` con `python3-jsonschema`.
 
 ---
 _Document standards and patterns, not every dependency_

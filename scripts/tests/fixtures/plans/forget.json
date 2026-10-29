@@ -1,0 +1,15 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.10.0",
+  "resource_changes": [
+    {
+      "address": "neon_database.app",
+      "type": "neon_database",
+      "change": {
+        "actions": ["forget"],
+        "before": {"name": "fake-attribute-value-db"},
+        "after": null
+      }
+    }
+  ]
+}

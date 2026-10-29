@@ -1,0 +1,9 @@
+name: secret-value
+services:
+  web:
+    image: ghcr.io/ejemplo/web@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    port: 3000
+    public: false
+    secrets:
+      - Stripe__ApiKey=valor-falso-123
+    memory_mb: 128

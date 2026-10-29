@@ -1,0 +1,5 @@
+# Reglas de cifrado de los secretos del catálogo (ADR 0006).
+# Solo llaves públicas age: la personal y la del CI. Nunca llaves privadas.
+creation_rules:
+  - path_regex: ^catalog/[^/]+/secrets\.enc\.yaml$
+    age: age1rxr6aweysej7xvdcdejw9dlyp3vzp0rtmhn64rfzcn0q72z08ues62h44y,age1fnuy5xuw0udwz0mggcgfuj7hy5u689dz6y46sqfvcp5svf40259qg3lxwc

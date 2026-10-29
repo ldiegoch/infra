@@ -1,0 +1,15 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.10.0",
+  "resource_changes": [
+    {
+      "address": "cloudflare_dns_record.app[\"web\"]",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": ["create", "delete"],
+        "before": {"content": "fake-attribute-value-old"},
+        "after": {"content": "fake-attribute-value-new"}
+      }
+    }
+  ]
+}

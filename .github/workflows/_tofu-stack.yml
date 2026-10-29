@@ -1,0 +1,204 @@
+# Workflow reutilizable: plan (y apply en main) de un stack de OpenTofu.
+#
+# Lo llaman pr.yml (mode: plan, environment: plan) y apply.yml
+# (mode: apply, environment: production), siempre con `secrets: inherit`.
+# Las credenciales son secretos del Environment indicado; no se declaran en
+# `workflow_call` porque los secretos de Environment solo existen dentro de
+# este job y no los ve el llamador.
+#
+# No declara `permissions`: hereda las del job llamador, que son el techo.
+# Ningún paso activa trazas de shell (xtrace): podrían imprimir
+# credenciales. El plan JSON contiene valores en claro: no se publica, no se
+# sube como artefacto y se borra al terminar.
+name: tofu-stack
+
+on:
+  workflow_call:
+    inputs:
+      stack:
+        description: Stack a planificar o aplicar (platform | apps).
+        type: string
+        required: true
+      mode:
+        description: plan publica el comentario en el PR; apply aplica el mismo plan.
+        type: string
+        required: true
+      environment:
+        description: GitHub Environment del que salen las credenciales (plan | production).
+        type: string
+        required: true
+      allow_destroy:
+        description: Estado de la etiqueta allow-destroy (true | false | unknown).
+        type: string
+        required: false
+        default: unknown
+
+jobs:
+  tofu:
+    name: ${{ inputs.mode }} ${{ inputs.stack }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        # bash --noprofile --norc -eo pipefail, sin trazas.
+        shell: bash
+    env:
+      STACK: ${{ inputs.stack }}
+      MODE: ${{ inputs.mode }}
+      TARGET_ENVIRONMENT: ${{ inputs.environment }}
+      TF_IN_AUTOMATION: "1"
+      TF_INPUT: "0"
+    steps:
+      # Invariante: apply solo con el Environment production y desde main.
+      # Corre antes de cualquier credencial y, por tanto, antes del init.
+      - name: Validar entradas e invariante de apply
+        env:
+          ALLOW_DESTROY_INPUT: ${{ inputs.allow_destroy }}
+          REF: ${{ github.ref }}
+        run: |
+          case "$STACK" in
+            platform | apps) ;;
+            *) echo "::error::stack desconocido: $STACK (se espera platform o apps)"; exit 1 ;;
+          esac
+          case "$MODE" in
+            plan | apply) ;;
+            *) echo "::error::mode desconocido: $MODE (se espera plan o apply)"; exit 1 ;;
+          esac
+          case "$TARGET_ENVIRONMENT" in
+            plan | production) ;;
+            *) echo "::error::environment desconocido: $TARGET_ENVIRONMENT (se espera plan o production)"; exit 1 ;;
+          esac
+          case "$ALLOW_DESTROY_INPUT" in
+            true | false | unknown) ;;
+            *) echo "::error::allow_destroy desconocido: $ALLOW_DESTROY_INPUT (se espera true, false o unknown)"; exit 1 ;;
+          esac
+          if [[ "$MODE" == "apply" ]]; then
+            if [[ "$TARGET_ENVIRONMENT" != "production" || "$REF" != "refs/heads/main" ]]; then
+              echo "::error::apply solo se permite con environment=production y desde refs/heads/main (recibido: environment=$TARGET_ENVIRONMENT, ref=$REF)"
+              exit 1
+            fi
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verificar que existen las credenciales
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          TF_STATE_PASSPHRASE: ${{ secrets.TF_STATE_PASSPHRASE }}
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+        run: |
+          # Solo imprime los nombres que faltan, nunca los valores.
+          missing=()
+          for name in R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_ENDPOINT \
+                      TF_STATE_PASSPHRASE TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET; do
+            [[ -n "${!name:-}" ]] || missing+=("$name")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::faltan secretos en el Environment $TARGET_ENVIRONMENT: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Leer la versión de OpenTofu del Dockerfile
+        id: version
+        run: |
+          version="$(sed -n 's/^ARG TOFU_VERSION=\([0-9][0-9.]*\)$/\1/p' .devcontainer/Dockerfile | head -n 1)"
+          if [[ -z "$version" ]]; then
+            echo "::error::no se encontró ARG TOFU_VERSION en .devcontainer/Dockerfile"
+            exit 1
+          fi
+          echo "tofu_version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ steps.version.outputs.tofu_version }}
+          tofu_wrapper: false
+
+      # Nodo efímero con tag:ci; el paso post de la acción cierra la sesión
+      # incluso si el job falla.
+      - name: Unirse a la red privada
+        uses: tailscale/github-action@99a8333667fff04fdd6cffb46dfd409f8329a7bf # v4.3.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.R2_ENDPOINT }}
+          TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+        run: tofu -chdir="$STACK" init -input=false
+
+      # Espera hasta 5 minutos si otro proceso tiene el bloqueo del estado.
+      - name: Plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.R2_ENDPOINT }}
+          TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+        run: tofu -chdir="$STACK" plan -input=false -lock-timeout=5m -out=tfplan
+
+      # plan.txt enmascara los valores sensibles; plan.json no, y nunca se
+      # imprime ni se publica.
+      - name: Salidas de texto y JSON del plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.R2_ENDPOINT }}
+          TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+        run: |
+          tofu -chdir="$STACK" show -no-color tfplan > "$STACK/plan.txt"
+          tofu -chdir="$STACK" show -json tfplan > "$STACK/plan.json"
+
+      # Guarda la salida y el código de la guardia sin cortar el job, para
+      # que el comentario se publique también cuando rechaza.
+      - name: Guardia contra destrucciones
+        id: guard
+        env:
+          ALLOW_DESTROY: ${{ inputs.allow_destroy }}
+        run: |
+          set +e
+          ./scripts/destroy-guard.sh "$STACK/plan.json" > "$STACK/guard.txt" 2>&1
+          code=$?
+          set -e
+          cat "$STACK/guard.txt"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Comentar el plan en el PR
+        if: inputs.mode == 'plan'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./scripts/ci/pr-comment.sh "$STACK" "$STACK/plan.txt" "$STACK/guard.txt"
+
+      - name: Veredicto de la guardia
+        env:
+          GUARD_EXIT: ${{ steps.guard.outputs.exit_code }}
+        run: |
+          if [[ "$GUARD_EXIT" != "0" ]]; then
+            echo "::error::la guardia contra destrucciones rechazó el plan de $STACK (código $GUARD_EXIT)"
+            exit 1
+          fi
+
+      # Aplica exactamente el plan que evaluó la guardia.
+      - name: Apply del mismo plan
+        if: inputs.mode == 'apply' && steps.guard.outputs.exit_code == '0'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.R2_ENDPOINT }}
+          TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+        run: tofu -chdir="$STACK" apply -input=false -lock-timeout=5m tfplan
+
+      - name: Limpieza
+        if: always()
+        run: rm -f "$STACK/plan.json" "$STACK/plan.txt" "$STACK/guard.txt" "$STACK/tfplan"

@@ -1,0 +1,8 @@
+name: image-tag
+services:
+  web:
+    image: ghcr.io/ejemplo/web:latest
+    port: 3000
+    public: true
+    hostname: web.ejemplo.com
+    memory_mb: 128

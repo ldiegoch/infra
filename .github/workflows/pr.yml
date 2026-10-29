@@ -1,0 +1,83 @@
+# Workflow de pull request: verificaciones y plan de ambos stacks.
+#
+# - checks: construye la imagen del dev container y corre scripts/check.sh
+#   dentro de ella, sin credenciales. Corre también para PR desde forks.
+# - plan: solo si checks pasa y el PR viene de este mismo repositorio (nunca
+#   de un fork). Llama a _tofu-stack.yml por stack con el Environment plan,
+#   del que salen las credenciales (secrets: inherit).
+#
+# Seguridad: ningún paso `run:` interpola datos del evento; los valores del
+# PR se pasan por `env:` o como entradas del workflow reutilizable.
+name: pr
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+# Techo por defecto: solo lectura del contenido.
+permissions:
+  contents: read
+
+# Concurrencia por job: un push nuevo cancela los checks anteriores, pero
+# nunca un plan en curso, que puede tener tomado el bloqueo del estado en R2
+# (cancelarlo lo dejaría huérfano y el apply en main fallaría).
+jobs:
+  checks:
+    name: checks
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}-checks
+      cancel-in-progress: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Historial completo para gitleaks git.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Construir la imagen del dev container
+        run: docker build -t infra-tools .devcontainer
+
+      # Corre con el uid/gid del runner, dueño del checkout. Ese uid no existe
+      # en la imagen, así que HOME apunta a /tmp para que las cachés de
+      # trivy y tofu sean escribibles. trivy descarga su base de checks por
+      # red; si no hay red, check.sh lo reporta como falla.
+      - name: Verificaciones (scripts/check.sh)
+        run: >-
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp
+          -v "$PWD:/w" -w /w infra-tools ./scripts/check.sh
+
+  plan:
+    name: plan
+    # Sin always()/failure(): si checks falla o se cancela, el plan no corre.
+    needs: checks
+    # Nunca en forks: solo PR cuya rama vive en este repositorio (9.4).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Sin cancelación: el plan nuevo espera a que termine el anterior.
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}-plan-${{ matrix.stack }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      # pr-comment.sh publica y reemplaza el comentario con GITHUB_TOKEN.
+      pull-requests: write
+    strategy:
+      # Cada stack publica su plan aunque el otro falle.
+      fail-fast: false
+      matrix:
+        stack: [platform, apps]
+    uses: ./.github/workflows/_tofu-stack.yml
+    with:
+      stack: ${{ matrix.stack }}
+      mode: plan
+      environment: plan
+      # La etiqueta se lee del payload del evento; labeled/unlabeled vuelven
+      # a disparar el plan cuando cambia.
+      allow_destroy: ${{ contains(github.event.pull_request.labels.*.name, 'allow-destroy') && 'true' || 'false' }}
+    secrets: inherit

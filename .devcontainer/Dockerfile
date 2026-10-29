@@ -1,8 +1,9 @@
 # .devcontainer/Dockerfile
 # Herramientas del proyecto con versiones fijadas. Cada descarga se verifica
-# contra el archivo de checksums de su release (age no publica uno).
+# contra el archivo de checksums de su release; age no publica uno, así que
+# su sha256 se fija aquí (al subir AGE_VERSION hay que actualizarlo).
 # Las líneas "renovate:" permiten que Renovate abra PRs al salir versiones nuevas.
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04@sha256:d94c97dd9cacf183d0a6fd12a8e87b526e9e928307674ae9c94139139c0c6eae
 
 ARG TARGETARCH
 # renovate: datasource=github-releases depName=opentofu/opentofu
@@ -11,6 +12,9 @@ ARG TOFU_VERSION=1.12.6
 ARG SOPS_VERSION=3.13.3
 # renovate: datasource=github-releases depName=FiloSottile/age
 ARG AGE_VERSION=1.3.2
+# sha256 de age-v${AGE_VERSION}-linux-<arch>.tar.gz (coincide con el digest del release en GitHub)
+ARG AGE_SHA256_AMD64=cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10
+ARG AGE_SHA256_ARM64=6b8dc4333c53a5a57c9e5834e3a48f92605d7154014cd07269ff3327db5d37f4
 # renovate: datasource=github-releases depName=aquasecurity/trivy
 ARG TRIVY_VERSION=0.76.1
 # renovate: datasource=github-releases depName=gitleaks/gitleaks
@@ -21,14 +25,14 @@ ARG TFLINT_VERSION=0.64.0
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl ca-certificates jq unzip pre-commit \
+      curl ca-certificates jq unzip pre-commit python3-jsonschema python3-yaml \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp/tools
 RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
     case "$ARCH" in \
-      amd64) TRIVY_ARCH=64bit; GL_ARCH=x64 ;; \
-      arm64) TRIVY_ARCH=ARM64; GL_ARCH=arm64 ;; \
+      amd64) TRIVY_ARCH=64bit; GL_ARCH=x64; AGE_SHA256="$AGE_SHA256_AMD64" ;; \
+      arm64) TRIVY_ARCH=ARM64; GL_ARCH=arm64; AGE_SHA256="$AGE_SHA256_ARM64" ;; \
       *) echo "Arquitectura no soportada: $ARCH" >&2; exit 1 ;; \
     esac; \
     gh=https://github.com; \
@@ -45,9 +49,10 @@ RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
     fetch "$gh/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.checksums.txt"; \
     sha256sum --check --ignore-missing "sops-v${SOPS_VERSION}.checksums.txt"; \
     install -m 0755 "sops-v${SOPS_VERSION}.linux.${ARCH}" /usr/local/bin/sops; cd ..; \
-    # age (sin archivo de checksums; descarga por HTTPS desde el release oficial)
+    # age (sin archivo de checksums en el release; se verifica el sha256 fijado arriba)
     mkdir age && cd age; \
     fetch "$gh/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-${ARCH}.tar.gz"; \
+    echo "${AGE_SHA256}  age-v${AGE_VERSION}-linux-${ARCH}.tar.gz" | sha256sum --check; \
     tar -xzf "age-v${AGE_VERSION}-linux-${ARCH}.tar.gz"; \
     install -m 0755 age/age age/age-keygen /usr/local/bin/; cd ..; \
     # Trivy
@@ -73,3 +78,6 @@ RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
 WORKDIR /
 # El volumen de la sesión de Claude hereda este dueño; sin esto queda como root.
 RUN mkdir -p /home/vscode/.claude && chown -R vscode:vscode /home/vscode/.claude
+
+# Sin root por defecto (Trivy DS-0002); devcontainer.json ya usa remoteUser vscode.
+USER vscode

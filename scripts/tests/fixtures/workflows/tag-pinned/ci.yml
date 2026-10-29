@@ -1,0 +1,14 @@
+# Ejemplo inválido: la acción usa una etiqueta en lugar de un SHA (9.1).
+name: tag-pinned
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
