@@ -183,8 +183,8 @@ Credenciales que agregan las specs siguientes; cada spec fija el nombre del secr
 | --- | --- | --- |
 | Token de DigitalOcean | Scopes personalizados: Droplets, firewalls, monitoreo, uptime | Los mismos scopes, solo lectura |
 | Token de API de Cloudflare | DNS de tu zona, Cloudflare Tunnel y el bucket R2 del estado | Token propio con DNS y Cloudflare Tunnel en lectura |
-| Llave de API de Neon | Tu organización de Neon | Solo lectura si Neon la ofrece; si no, una llave propia con el mismo alcance (pendiente de decisión, ADR 0011) |
-| Llave age del CI | Descifrar el catálogo | Misma llave: el plan de `apps` lee el catálogo (pendiente de decisión, ADR 0011) |
+| Llave de API de Neon | Tu organización de Neon | Solo lectura si Neon la ofrece; si no, una llave propia con el mismo alcance (riesgo aceptado en el ADR 0011) |
+| Llave age del CI | Descifrar el catálogo | Misma llave: el plan de `apps` lee el catálogo (riesgo aceptado en el ADR 0011) |
 | Llave SSH del usuario `deploy` | Solo ese usuario en el Droplet | Misma llave: el plan de `apps` consulta Docker por SSH (riesgo aceptado en el ADR 0011) |
 | Token de lectura de GHCR | `read:packages`, para descargar imágenes privadas | El mismo alcance, que ya es de solo lectura |
 | Tokens de Grafana Cloud | Escritura de logs y métricas (Alloy) y service account para el provider | Solo el service account, con rol de lectura si alcanza para el plan |
