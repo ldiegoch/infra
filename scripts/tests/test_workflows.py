@@ -6,6 +6,7 @@ inválidos de fixtures/workflows.
 """
 
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -18,6 +19,7 @@ FIXTURES = TESTS / "fixtures" / "workflows"
 
 SHA_REF = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
 DIGEST_REF = re.compile(r"@sha256:[0-9a-f]{64}$")
+INVOKED_SCRIPT = re.compile(r"\./(scripts/[\w./-]+\.(?:sh|py))")
 
 
 def load(path):
@@ -157,6 +159,18 @@ class WorkflowsTest(unittest.TestCase):
         self.assertFalse(doc.get("concurrency", {}).get("cancel-in-progress"), "pr.yml: concurrency de workflow cancela el plan")
         plan = doc["jobs"]["plan"].get("concurrency", {})
         self.assertIs(plan.get("cancel-in-progress"), False, "pr.yml: el plan necesita cancel-in-progress: false")
+
+    def test_invoked_scripts_are_executable_in_git(self):
+        # Con core.fileMode=false (WSL) el bit de ejecución no se ve en local;
+        # se revisa el modo guardado en el índice de Git, que es el del CI.
+        invoked = set()
+        for path in sorted(WORKFLOWS.iterdir()):
+            invoked |= set(INVOKED_SCRIPT.findall(path.read_text(encoding="utf-8")))
+        self.assertTrue(invoked, "ningún workflow invoca ./scripts/*")
+        out = subprocess.run(["git", "ls-files", "-s", "--", *sorted(invoked)], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+        modes = {line.split("\t")[1]: line.split()[0] for line in out.splitlines()}
+        for script in sorted(invoked):
+            self.assertEqual(modes.get(script), "100755", f"{script}: falta el bit de ejecución en Git (git update-index --chmod=+x)")
 
 
 if __name__ == "__main__":

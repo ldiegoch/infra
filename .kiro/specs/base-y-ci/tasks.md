@@ -150,3 +150,4 @@
 - Un error del catálogo también hace fallar `test_real_catalog_passes` en test_check_catalog.py y test_check_sops.py (verifican el catálogo real): un error de autor aparece como 4 fallas. No bloquea; mejora opcional.
 - Validación final (ronda 1): `check_sops.py` ya no salta carpetas con `_` (la excepción de 4.9 es solo para app.yaml); apply usa `-lock-timeout=5m` como el plan; `guard.txt` en `.gitignore`.
 - Decisión humana (2026-10-28): check.sh paso 9 corre `gitleaks git` y también `gitleaks dir`, así detecta secretos sin commit. `secrets: inherit` se mantiene hasta que la prueba única del Paso 1 confirme que el job lee los secretos del Environment sin él; después se quita.
+- WSL con `core.fileMode=false` oculta el bit de ejecución: los scripts que se invocan como `./scripts/...` se marcan con `git update-index --chmod=+x`; `test_workflows.py` lo verifica en el índice de Git.
